@@ -18,8 +18,10 @@ interface AuthState {
   selectedUser: User | null;
 }
 
+const savedUser = localStorage.getItem('user');
+
 const initialState: AuthState = {
-  user: null,
+  user: savedUser ? JSON.parse(savedUser) : null,
   suggestedUsers: [],
   userProfile: null,
   selectedUser: null,
@@ -31,6 +33,11 @@ const authSlice = createSlice({
   reducers: {
     setAuthUser: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload;
+      if (action.payload) {
+        localStorage.setItem('user', JSON.stringify(action.payload));
+      } else {
+        localStorage.removeItem('user');
+      }
     },
     setSuggestedUsers: (state, action: PayloadAction<User[]>) => {
       state.suggestedUsers = action.payload;

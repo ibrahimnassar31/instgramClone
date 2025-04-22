@@ -19,6 +19,16 @@ interface LoginFormData {
 interface ApiResponse {
   message: string;
   success: boolean;
+  user: {
+    _id: string;
+    username: string;
+    email: string;
+    profilePicture?: string;
+    bio?: string;
+    followers: string[];
+    following: string[];
+    posts: string[];
+  };
 }
 
 const Login = () => {
@@ -45,25 +55,27 @@ const Login = () => {
   const router = useRouter();
  
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const dispatch = useAppDispatch();
 
-    try {
-      const response = await execute('/users/login', input);
-
-      if (response.success) {
-        useAppDispatch(setAuthUser(response.user));
-        toast.success(response.message);
-        setInput({
-          email: '',
-          password: '',
-        });
-        router.push('/');
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+  
+      try {
+        const response = await execute('/users/login', input);
+  
+        if (response.success) {
+          dispatch(setAuthUser(response.user));
+          toast.success(response.message);
+          setInput({
+            email: '',
+            password: '',
+          });
+          router.push('/');
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to log in');
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to log in');
-    }
-  };
+    };
 
 
 
