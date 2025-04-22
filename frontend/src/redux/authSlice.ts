@@ -18,7 +18,7 @@ interface AuthState {
   selectedUser: User | null;
 }
 
-const savedUser = localStorage.getItem('user');
+const savedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
 
 const initialState: AuthState = {
   user: savedUser ? JSON.parse(savedUser) : null,
@@ -48,6 +48,10 @@ const authSlice = createSlice({
     setSelectedUser: (state, action: PayloadAction<User | null>) => {
       state.selectedUser = action.payload;
     },
+    logout: (state) => {
+      state.user = null;
+      localStorage.removeItem('user');
+    },
   },
 });
 
@@ -56,6 +60,7 @@ export const {
   setSuggestedUsers,
   setUserProfile,
   setSelectedUser,
+  logout,
 } = authSlice.actions;
 
 export default authSlice.reducer;
