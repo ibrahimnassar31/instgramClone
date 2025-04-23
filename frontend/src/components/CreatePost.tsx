@@ -4,13 +4,12 @@ import { Dialog, DialogContent, DialogHeader } from './ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ImagePlus } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAppSelector } from '../redux/hooks';
-import { postData } from '../../src/hooks/useApi';
+import { useAppSelector, useAppDispatch } from '../redux/hooks';
+import { postData } from '../hooks/useApi';
 import { readFileAsDataURL } from '../lib/utils';
-
-
+import { setPosts } from '../redux/postSlice';
 
 type Post = {
   _id: string;
@@ -50,23 +49,46 @@ const CreatePost = ({ open, setOpen }: CreatePostProps) => {
 
   const { user } = useAppSelector((state) => state.auth);
   const { posts } = useAppSelector((state) => state.post);
+  const dispatch = useAppDispatch();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // Validate file size (5MB limit)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+      
+      // Validate file type
+      if (!selectedFile.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+
       setFile(selectedFile);
       try {
         const dataUrl = await readFileAsDataURL(selectedFile);
         setImagePreview(dataUrl);
       } catch (error) {
-        toast.error('فشل تحميل الصورة');
+        toast.error('Failed to load image');
       }
+    }
+  };
+
+  const resetForm = () => {
+    setCaption('');
+    setFile(null);
+    setImagePreview('');
+    setLoading(false);
+    if (imageRef.current) {
+      imageRef.current.value = '';
     }
   };
 
   const createPost = async () => {
     if (!caption && !file) {
-      toast.error('يرجى إضافة تعليق أو صورة');
+      toast.error('Please add a caption or image');
       return;
     }
 
@@ -79,54 +101,77 @@ const CreatePost = ({ open, setOpen }: CreatePostProps) => {
       const response = await postData<{ success: boolean; post: Post; message: string }>(
         '/posts',
         formData,
+        { withCredentials: true },
       );
 
       if (response.success) {
-        setPosts([response.post, ...posts]);
-        toast.success(response.message);
+        dispatch(setPosts([response.post, ...posts]));
+        toast.success('Post created successfully');
         setOpen(false);
-        setCaption('');
-        setFile(null);
-        setImagePreview('');
-      } else {
-        toast.error('فشل إنشاء المنشور');
+        resetForm();
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'فشل إنشاء المنشور');
+      toast.error(error instanceof Error ? error.message : 'Failed to create post');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) resetForm();
+    }}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader className="text-center font-semibold">إنشاء منشور جديد</DialogHeader>
+        <DialogHeader className="text-center font-semibold">Create New Post</DialogHeader>
         <div className="flex gap-3 items-center">
           <Avatar>
             <AvatarImage src={user?.profilePicture} alt={user?.username || 'User'} />
-            <AvatarFallback>{user?.username?.[0] || 'U'}</AvatarFallback>
+            <AvatarFallback>{user?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
           <div>
             <h1 className="font-semibold text-sm">{user?.username}</h1>
-            <span className="text-gray-600 text-xs">Bio here...</span>
+            <span className="text-gray-600 text-xs">{user?.bio || 'No bio yet'}</span>
           </div>
         </div>
+
         <Textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          className="focus-visible:ring-transparent border-none resize-none"
-          placeholder="اكتب تعليقاً..."
+          className="focus-visible:ring-transparent border-none resize-none min-h-[100px]"
+          placeholder="Write a caption..."
+          maxLength={2200}
         />
-        {imagePreview && (
-          <div className="w-full h-64 flex items-center justify-center">
+
+        {imagePreview ? (
+          <div className="relative w-full h-64">
             <img
               src={imagePreview}
-              alt="معاينة الصورة"
+              alt="Preview"
               className="object-cover h-full w-full rounded-md"
             />
+            <Button
+              variant="destructive"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={() => {
+                setFile(null);
+                setImagePreview('');
+              }}
+            >
+              Remove
+            </Button>
           </div>
+        ) : (
+          <Button
+            onClick={() => imageRef.current?.click()}
+            className="w-full h-64 border-2 border-dashed border-gray-300 hover:border-gray-400 bg-transparent hover:bg-gray-50"
+          >
+            <ImagePlus className="h-6 w-6 mr-2" />
+            Upload Image
+          </Button>
         )}
+
         <input
           ref={imageRef}
           type="file"
@@ -134,28 +179,21 @@ const CreatePost = ({ open, setOpen }: CreatePostProps) => {
           className="hidden"
           onChange={handleFileChange}
         />
+
         <Button
-          onClick={() => imageRef.current?.click()}
-          className="w-fit mx-auto bg-[#0095F6] hover:bg-[#258bcf]"
+          onClick={createPost}
+          disabled={loading || (!caption && !file)}
+          className="w-full bg-blue-500 hover:bg-blue-600"
         >
-          اختر من الجهاز
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating post...
+            </>
+          ) : (
+            'Share Post'
+          )}
         </Button>
-        {imagePreview && (
-          <Button
-            onClick={createPost}
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                جارٍ التحميل...
-              </>
-            ) : (
-              'نشر'
-            )}
-          </Button>
-        )}
       </DialogContent>
     </Dialog>
   );

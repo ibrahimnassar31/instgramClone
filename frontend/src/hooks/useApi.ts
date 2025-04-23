@@ -7,6 +7,8 @@ const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
+     withCredentials: true, // Enable credentials
+
   },
 });
 
@@ -23,8 +25,13 @@ export const fetchData = async <T>(endpoint: string): Promise<T> => {
 
 
 export const postData = async <T>(endpoint: string, payload: unknown): Promise<T> => {
+  const token = localStorage.getItem('token'); // استرجاع التوكن من localStorage
+
   try {
-    const response = await apiClient.post<T>(endpoint, payload);
+    const response = await apiClient.post<T>(endpoint, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`, // إضافة التوكن إلى الـ Headers
+      },});
     return response.data;
   } catch (error) {
     handleApiError(error);
