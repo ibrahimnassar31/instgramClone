@@ -1,13 +1,13 @@
 import axios, { AxiosError } from "axios";
 import * as Sentry from "@sentry/react";
 
-const BASE_URL = "http://localhost:8000/api/v1"; 
+const BASE_URL = "http://localhost:8000/api/v1";
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
-     withCredentials: true, // Enable credentials
+    withCredentials: true, // Enable credentials
 
   },
 });
@@ -19,26 +19,37 @@ export const fetchData = async <T>(endpoint: string): Promise<T> => {
     return response.data;
   } catch (error) {
     handleApiError(error);
-    throw error; 
-  }
-};
-
-
-export const postData = async <T>(endpoint: string, payload: unknown): Promise<T> => {
-  const token = localStorage.getItem('token'); // استرجاع التوكن من localStorage
-
-  try {
-    const response = await apiClient.post<T>(endpoint, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`, // إضافة التوكن إلى الـ Headers
-      },});
-    return response.data;
-  } catch (error) {
-    handleApiError(error);
     throw error;
   }
 };
 
+export const postData = async <T>(
+  endpoint: string,
+  data: unknown,
+  options?: {
+    headers?: Record<string, string>;
+    skipJsonStringify?: boolean;
+  }
+) => {
+  const response = await fetch(${BASE_URL}${endpoint}, {
+    method: "POST",
+    headers: {
+      ...(!options?.skipJsonStringify && {
+        "Content-Type": "application/json",
+      }),
+      ...options?.headers,
+    },
+    credentials: "include",
+    body: options?.skipJsonStringify ? data : JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Something went wrong");
+  }
+
+  return response.json() as Promise<T>;
+};
 
 export const updateData = async <T>(endpoint: string, payload: unknown): Promise<T> => {
   try {
