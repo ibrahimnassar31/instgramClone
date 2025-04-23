@@ -31,7 +31,7 @@ export const postData = async <T>(
     skipJsonStringify?: boolean;
   }
 ) => {
-  const response = await fetch(${BASE_URL}${endpoint}, {
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: "POST",
     headers: {
       ...(!options?.skipJsonStringify && {
