@@ -11,7 +11,7 @@ import { setPosts, setSelectedPost } from '../../src/redux/postSlice';
 import { postData } from '../hooks/useApi';
 import CreatePost from './CreatePost';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { useToggle } from '../hooks/useToggle';
+// import { useToggle } from '../hooks/useToggle';
 import { logout } from '../../src/redux/authSlice';
 const SidebarItem = ({
   icon,
@@ -59,7 +59,7 @@ const Sidebar = () => {
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
-const [open, setOpen] = useToggle(false);
+const [open, setOpen] = useState(false);
 
   const logoutHandler = async () => {
     try {
@@ -73,6 +73,7 @@ const [open, setOpen] = useToggle(false);
         router.push('/login');
         toast.success(response.message);
         dispatch(logout());
+        
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'فشل تسجيل الخروج');
@@ -85,7 +86,7 @@ const [open, setOpen] = useToggle(false);
         logoutHandler();
         break;
       case 'Create':
-        setOpen()
+        setOpen(!open)
         break;
       case 'Profile':
         if (user?._id) router.push(`/profile/${user._id}`);
@@ -97,7 +98,6 @@ const [open, setOpen] = useToggle(false);
         router.push('/chat');
         break;
       default:
-        // يمكن إضافة تنقل لـ Search أو Explore لاحقًا
         break;
     }
   };
