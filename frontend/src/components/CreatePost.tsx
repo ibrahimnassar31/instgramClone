@@ -59,7 +59,7 @@ const CreatePost = ({ open, setOpen }: CreatePostProps) => {
         toast.error('Image size should be less than 5MB');
         return;
       }
-      
+
       // Validate file type
       if (!selectedFile.type.startsWith('image/')) {
         toast.error('Please select an image file');
@@ -94,14 +94,14 @@ const CreatePost = ({ open, setOpen }: CreatePostProps) => {
 
     const formData = new FormData();
     formData.append('caption', caption);
-    if (file) formData.append('image', file);
+    formData.append('image', file);
 
     try {
       setLoading(true);
       const response = await postData<{ success: boolean; post: Post; message: string }>(
         '/posts',
         formData,
-        { withCredentials: true },
+        { skipJsonStringify: true}
       );
 
       if (response.success) {
