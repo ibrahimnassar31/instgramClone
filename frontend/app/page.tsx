@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAppSelector } from '../src/redux/hooks';
+import HomePage from '../src/components/HomePage';
 
 export default function Home() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function Home() {
 
   return (
     <div className="flex items-center justify-center w-screen h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold">Welcome to the Home Page!</h1>
+      <HomePage />
     </div>
   );
 }

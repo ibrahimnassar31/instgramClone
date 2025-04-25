@@ -65,6 +65,7 @@ const Login = () => {
   
         if (response.success) {
           dispatch(setAuthUser(response.user));
+          // console.log(response);
           toast.success(response.message);
           setInput({
             email: '',
